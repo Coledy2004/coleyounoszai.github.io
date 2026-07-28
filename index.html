@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cole Younoszai — Bounty Log</title>
+<style>
+  :root{
+    --bg-deep:#05060a;
+    --bg-mid:#0b1220;
+    --rust:#d9601a;
+    --rust-bright:#ff8a3d;
+    --teal:#2ec4b6;
+    --paper:#f2e9d8;
+    --panel-bg:rgba(10,14,22,0.92);
+    --border:#c9601a55;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+    background:var(--bg-deep);
+    font-family:'Courier New',ui-monospace,monospace;
+    color:var(--paper);
+  }
+  #stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;}
+  .nebula{
+    position:fixed;border-radius:50%;filter:blur(70px);opacity:0.25;z-index:0;pointer-events:none;
+  }
+  .nebula.n1{width:38vw;height:38vw;background:var(--rust);top:-8%;left:-6%;animation:drift1 40s ease-in-out infinite alternate;}
+  .nebula.n2{width:32vw;height:32vw;background:var(--teal);bottom:-10%;right:-8%;animation:drift2 46s ease-in-out infinite alternate;}
+  @keyframes drift1{from{transform:translate(0,0);}to{transform:translate(6vw,8vh);}}
+  @keyframes drift2{from{transform:translate(0,0);}to{transform:translate(-7vw,-6vh);}}
+
+  #space{
+    position:fixed;inset:0;width:100%;height:100%;z-index:1;cursor:crosshair;
+  }
+
+  #hud-top{
+    position:fixed;top:0;left:0;right:0;z-index:20;
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:18px 24px;pointer-events:none;
+  }
+  #hud-top .title{
+    pointer-events:auto;
+  }
+  #hud-top h1{
+    margin:0;font-size:1.4rem;letter-spacing:2px;color:var(--rust-bright);
+    text-shadow:0 0 12px #ff8a3d55;
+  }
+  #hud-top .sub{margin:2px 0 0;font-size:0.75rem;color:var(--teal);letter-spacing:1px;}
+  #hud-top .scan{
+    text-align:right;font-size:0.7rem;color:#9fb3c8;letter-spacing:1px;pointer-events:auto;
+  }
+  #hud-top .scan b{color:var(--rust-bright);}
+
+  #intro{
+    position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    background:rgba(5,6,10,0.88);transition:opacity 0.6s ease;
+  }
+  #intro.hidden{opacity:0;pointer-events:none;}
+  #intro-box{
+    max-width:520px;margin:0 20px;padding:28px 30px;border:1px solid var(--border);
+    background:var(--panel-bg);text-align:center;
+  }
+  #intro-box h2{color:var(--rust-bright);letter-spacing:2px;margin-top:0;font-size:1.1rem;}
+  #intro-box p{font-size:0.85rem;line-height:1.6;color:#d8dee8;}
+  #intro-box button{
+    margin-top:12px;background:var(--rust);color:#fff;border:none;padding:10px 22px;
+    font-family:inherit;letter-spacing:1px;cursor:pointer;font-size:0.8rem;
+  }
+  #intro-box button:hover{background:var(--rust-bright);}
+
+  .station{
+    position:absolute;transform:translate(-50%,-50%);z-index:5;cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;gap:6px;user-select:none;
+  }
+  .station .ring{
+    width:52px;height:52px;border-radius:50%;
+    border:1.5px solid var(--teal);display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle,#0e1a24 0%,rgba(14,26,36,0.4) 70%,transparent 100%);
+    box-shadow:0 0 14px #2ec4b655;
+    animation:pulse 2.8s ease-in-out infinite;
+  }
+  .station.visited .ring{border-color:var(--rust-bright);box-shadow:0 0 14px #ff8a3d66;}
+  .station:hover .ring{transform:scale(1.12);}
+  .station svg{width:26px;height:26px;stroke:var(--teal);fill:none;}
+  .station.visited svg{stroke:var(--rust-bright);}
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 8px #2ec4b644;}
+    50%{box-shadow:0 0 20px #2ec4b688;}
+  }
+  .station .label{
+    font-size:0.62rem;letter-spacing:1.5px;color:var(--paper);text-align:center;
+    background:rgba(5,6,10,0.55);padding:2px 6px;border-radius:2px;white-space:nowrap;
+  }
+  .station .label .sub{display:block;font-size:0.56rem;color:#9fb3c8;letter-spacing:0.5px;}
+
+  #ship{
+    position:absolute;width:54px;height:54px;transform:translate(-50%,-50%);z-index:8;
+    pointer-events:none;filter:drop-shadow(0 0 6px #ff8a3daa);
+  }
+  #ship svg{width:100%;height:100%;}
+
+  #panel{
+    position:fixed;top:0;right:-100%;width:min(480px,92vw);height:100%;z-index:30;
+    background:var(--panel-bg);border-left:1px solid var(--border);
+    transition:right 0.45s cubic-bezier(.2,.8,.3,1);
+    overflow-y:auto;padding:26px 26px 40px;
+  }
+  #panel.open{right:0;}
+  #panel::-webkit-scrollbar{width:6px;}
+  #panel::-webkit-scrollbar-thumb{background:var(--rust);}
+  #panel-close{
+    position:absolute;top:16px;right:18px;background:none;border:1px solid var(--border);
+    color:var(--paper);width:30px;height:30px;cursor:pointer;font-size:1rem;line-height:1;
+  }
+  #panel-close:hover{background:var(--rust);border-color:var(--rust);}
+  #panel h2{color:var(--rust-bright);letter-spacing:2px;font-size:1.1rem;margin:6px 0 2px;}
+  #panel .tag{color:var(--teal);font-size:0.7rem;letter-spacing:1px;margin-bottom:18px;}
+  #panel-body{font-size:0.85rem;line-height:1.65;color:#e4e9f0;}
+  #panel-body .card{
+    border:1px solid var(--border);padding:14px 16px;margin-bottom:14px;background:rgba(255,255,255,0.02);
+  }
+  #panel-body .card h3{margin:0 0 6px;font-size:0.85rem;color:var(--rust-bright);letter-spacing:0.5px;}
+  #panel-body .card .meta{font-size:0.68rem;color:var(--teal);margin-bottom:6px;letter-spacing:0.5px;}
+  #panel-body .stamp{
+    display:inline-block;border:1px solid var(--rust-bright);color:var(--rust-bright);
+    font-size:0.6rem;letter-spacing:1px;padding:2px 6px;margin-bottom:8px;transform:rotate(-2deg);
+  }
+  #photo-frame{
+    width:120px;height:120px;border-radius:50%;border:2px solid var(--rust-bright);
+    overflow:hidden;margin:0 auto 16px;box-shadow:0 0 16px #ff8a3d55;
+  }
+  #photo-frame img{width:100%;height:100%;object-fit:cover;display:block;}
+  .stats-row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;}
+  .stat{border:1px solid var(--border);padding:6px 10px;font-size:0.68rem;color:var(--teal);}
+  #panel-body a{color:var(--rust-bright);}
+  .contact-btn{
+    display:block;text-align:center;border:1px solid var(--rust-bright);color:var(--rust-bright);
+    text-decoration:none;padding:10px;margin-bottom:10px;font-size:0.78rem;letter-spacing:1px;
+    transition:background 0.2s,color 0.2s;
+  }
+  .contact-btn:hover{background:var(--rust-bright);color:#0b0d12;}
+
+  #footer-nav{
+    position:fixed;bottom:0;left:0;right:0;z-index:20;
+    display:flex;justify-content:center;gap:6px;flex-wrap:wrap;
+    padding:10px 12px;background:linear-gradient(to top,rgba(5,6,10,0.85),transparent);
+  }
+  #footer-nav button{
+    background:rgba(15,20,30,0.7);border:1px solid var(--border);color:#cfd8e3;
+    font-family:inherit;font-size:0.65rem;letter-spacing:1px;padding:8px 12px;cursor:pointer;
+  }
+  #footer-nav button:hover{border-color:var(--rust-bright);color:var(--rust-bright);}
+
+  @media (max-width:640px){
+    #hud-top h1{font-size:1.05rem;}
+    .station .label{font-size:0.55rem;}
+    .station .ring{width:44px;height:44px;}
+    #footer-nav button{font-size:0.58rem;padding:6px 8px;}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+<div class="nebula n1"></div>
+<div class="nebula n2"></div>
+
+<div id="space">
+  <div id="ship">
+    <svg viewBox="0 0 100 100">
+      <g>
+        <polygon points="50,6 62,55 50,46 38,55" fill="#e8e3d6" stroke="#8a8578" stroke-width="1.5"/>
+        <polygon points="50,46 62,55 58,74 50,68 42,74 38,55" fill="#cfc8b6" stroke="#8a8578" stroke-width="1.5"/>
+        <polygon points="50,68 55,86 50,80 45,86" fill="#d9601a" stroke="#8a8578" stroke-width="1"/>
+        <line x1="50" y1="6" x2="50" y2="46" stroke="#d9601a" stroke-width="2"/>
+        <circle cx="50" cy="30" r="4" fill="#2ec4b6"/>
+        <polygon points="38,55 30,66 38,63" fill="#b0a992"/>
+        <polygon points="62,55 70,66 62,63" fill="#b0a992"/>
+      </g>
+    </svg>
+  </div>
+  <!-- stations injected by JS -->
+</div>
+
+<div id="hud-top">
+  <div class="title">
+    <h1>COLE YOUNOSZAI</h1>
+    <p class="sub">CS STUDENT // CONSULTING · DATA SCIENCE · SWE</p>
+  </div>
+  <div class="scan">
+    SYSTEMS SCANNED: <b id="scan-count">0</b>/5<br>
+    <span style="font-size:0.62rem;">click a beacon, or the ship, to dock</span>
+  </div>
+</div>
+
+<div id="footer-nav"></div>
+
+<div id="panel">
+  <button id="panel-close">✕</button>
+  <div id="panel-tag" class="tag"></div>
+  <h2 id="panel-title"></h2>
+  <div id="panel-body"></div>
+</div>
+
+<div id="intro">
+  <div id="intro-box">
+    <h2>◈ INCOMING TRANSMISSION ◈</h2>
+    <p>You've patched into Cole Younoszai's bounty log. Five beacons are drifting out there —
+    Command Deck, Bounty Board, Mission Log, Cargo Hold, and Comms Array.
+    Click any beacon (or the buttons below) to dock instantly. No flying skills required.</p>
+    <button id="intro-start">JACK IN</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   EDIT ME: all real content lives in this DATA object.
+   Swap DATA.photo for a real image filename (place the image
+   next to this index.html) once you have one.
+   ============================================================ */
+const DATA = {
+  photo: null, // e.g. "photo.jpg" — falls back to a silhouette if missing/null
+  callsign: "Swordfish Jr.",
+  name: "Cole Younoszai",
+  title: "B.S. Computer Science — University of Colorado Boulder, Class of 2027",
+  location: "Denver, CO — willing to relocate",
+  bio: "Rising senior at CU Boulder (3.7 GPA) navigating the space between consulting, data science, and software engineering. Spent last summer inside a state government's driver-services system as an implementation consultant, turning messy real-world requirements into working software — and found he likes problems that actually help people when solved. Currently scanning for a full-time seat in consulting, data science, or SWE where he can keep doing exactly that, at scale.",
+  stats: ["GPA 3.7","C++","Python","SQL","JavaScript","Scala"],
+  email: "coyo5211@colorado.edu",
+  linkedin: "https://tinyurl.com/yx3486ef",
+  github: "https://github.com/Coledy2004",
+  resume: "Cole_Younoszai_Resume.pdf",
+  accomplishments: [
+    {
+      title: "President — Kappa Theta Pi (Nu Chapter)",
+      detail: "Elected to lead a 60+ member national professional technology fraternity for a full year — running chapter strategy, recruitment, and mentorship programs that strengthened members' job-placement outcomes."
+    },
+    {
+      title: "Implementation Consultant Intern — FAST Enterprises",
+      detail: "Partnered directly with a state Department of Transportation to rebuild Iowa's driver-services software, translating government requirements into configured, tested systems and presenting results straight to stakeholders."
+    },
+    {
+      title: "Community Center Lead — CU Boulder",
+      detail: "Manages a 15-person student staff and streamlined administrative operations for residence hall facilities through Excel-driven process improvements."
+    },
+    {
+      title: "Mentor — OPALS, Center for Energy Research",
+      detail: "Guided 6 high schoolers through a full computational research lifecycle, from data collection to publication, while analyzing and visualizing battery performance data in Python."
+    },
+    {
+      title: "Program Leader — Roundup River Ranch",
+      detail: "Led outdoor programming for children with life-threatening chronic illnesses, adapting activities to individual medical needs and coordinating a team of 4 volunteers weekly."
+    }
+  ],
+  experience: [
+    {role:"Implementation Consultant Intern", org:"FAST Enterprises · Des Moines, IA", period:"May 2026 – Aug 2026", detail:"Improved government driver-services software by translating client requirements into configured, tested system solutions and presenting updates directly to state stakeholders."},
+    {role:"Mentor / Intern", org:"OPALS, Center for Energy Research · San Diego, CA", period:"Sept 2024 – Aug 2025", detail:"Mentored 6 high school students through the full research lifecycle; analyzed and visualized battery performance data in Python and Excel."},
+    {role:"Program Leader", org:"Roundup River Ranch · Gypsum, CO", period:"Apr 2025 – Aug 2025", detail:"Led outdoor programs for groups of up to 14 children with chronic illnesses; managed 4 volunteers weekly."},
+    {role:"Community Center Lead", org:"University of Colorado Boulder · Boulder, CO", period:"Dec 2023 – Present", detail:"Manages a 15-person staff and daily front-desk operations for residence hall facilities."},
+    {role:"President", org:"Kappa Theta Pi (Nu Chapter)", period:"Dec 2023 – Present", detail:"Leads operations for a 60+ member national professional technology fraternity."}
+  ],
+  projects: [
+    {name:"Song-Seeker Website", stack:"JavaScript · HTML/CSS · SQL", detail:"Full-stack music recommendation site with playlist creation, search, and user accounts. Integrated the Spotify and Last.fm APIs and designed a SQL schema for efficient user data queries."},
+    {name:"Physics Engine", stack:"C++ · wxWidgets", detail:"Real-time 2D physics simulation with collision detection and motion tracking, with rendering and calculation logic optimized to hold smooth frame rates under complex simulation loads."}
+  ]
+};
+
+/* ============================================================
+   Station layout (percent coordinates within #space)
+   ============================================================ */
+const STATIONS = [
+  {id:"about", label:"COMMAND DECK", sub:"Pilot Profile", x:18, y:26, icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>'},
+  {id:"bounty", label:"BOUNTY BOARD", sub:"Accomplishments", x:80, y:22, icon:'<path d="M12 2l2.4 5 5.6.8-4 4 1 5.6-5-2.7-5 2.7 1-5.6-4-4 5.6-.8z"/>'},
+  {id:"missionlog", label:"MISSION LOG", sub:"Experience", x:14, y:76, icon:'<path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/>'},
+  {id:"cargo", label:"CARGO HOLD", sub:"Projects", x:84, y:78, icon:'<path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/>'},
+  {id:"comms", label:"COMMS ARRAY", sub:"Contact", x:50, y:88, icon:'<path d="M12 2v6"/><circle cx="12" cy="14" r="6"/><path d="M9 14a3 3 0 0 1 3-3"/>'}
+];
+
+/* ============================================================
+   Panel rendering
+   ============================================================ */
+function renderAbout(){
+  const photoHtml = DATA.photo
+    ? `<img src="${DATA.photo}" alt="${DATA.name}">`
+    : `<svg viewBox="0 0 100 100" width="100%" height="100%" style="background:#0e1a24;">
+         <circle cx="50" cy="38" r="18" fill="#2ec4b6" opacity="0.5"/>
+         <path d="M20 88c0-18 13-30 30-30s30 12 30 30" fill="#2ec4b6" opacity="0.5"/>
+       </svg>`;
+  return `
+    <div id="photo-frame">${photoHtml}</div>
+    <div style="text-align:center;">
+      <div class="stamp">CALLSIGN: ${DATA.callsign}</div>
+    </div>
+    <p style="text-align:center;color:#9fb3c8;font-size:0.72rem;">${DATA.title}<br>${DATA.location}</p>
+    <p>${DATA.bio}</p>
+    <div class="stats-row">${DATA.stats.map(s=>`<div class="stat">${s}</div>`).join("")}</div>
+  `;
+}
+function renderBounty(){
+  return DATA.accomplishments.map(a=>`
+    <div class="card">
+      <div class="stamp">BOUNTY CLAIMED</div>
+      <h3>${a.title}</h3>
+      <p style="margin:0;">${a.detail}</p>
+    </div>
+  `).join("");
+}
+function renderMissionLog(){
+  return DATA.experience.map(e=>`
+    <div class="card">
+      <h3>${e.role}</h3>
+      <div class="meta">${e.org} — ${e.period}</div>
+      <p style="margin:0;">${e.detail}</p>
+    </div>
+  `).join("");
+}
+function renderCargo(){
+  return DATA.projects.map(p=>`
+    <div class="card">
+      <h3>${p.name}</h3>
+      <div class="meta">${p.stack}</div>
+      <p style="margin:0;">${p.detail}</p>
+    </div>
+  `).join("");
+}
+function renderComms(){
+  return `
+    <p>Open a hailing frequency:</p>
+    <a class="contact-btn" href="mailto:${DATA.email}">✉ EMAIL — ${DATA.email}</a>
+    <a class="contact-btn" href="${DATA.linkedin}" target="_blank" rel="noopener">🔗 LINKEDIN</a>
+    <a class="contact-btn" href="${DATA.github}" target="_blank" rel="noopener">💻 GITHUB</a>
+    <a class="contact-btn" href="${DATA.resume}" target="_blank" rel="noopener">📄 DOWNLOAD RESUME</a>
+    <p style="color:#9fb3c8;font-size:0.7rem;margin-top:18px;">See you, space cowboy…</p>
+  `;
+}
+const PANELS = {
+  about:      {tag:"COMMAND DECK",  title:"Pilot Profile",   render:renderAbout},
+  bounty:     {tag:"BOUNTY BOARD",  title:"Accomplishments", render:renderBounty},
+  missionlog: {tag:"MISSION LOG",   title:"Experience",      render:renderMissionLog},
+  cargo:      {tag:"CARGO HOLD",    title:"Projects",        render:renderCargo},
+  comms:      {tag:"COMMS ARRAY",   title:"Get In Touch",    render:renderComms}
+};
+
+/* ============================================================
+   Build stations + footer nav
+   ============================================================ */
+const spaceEl = document.getElementById("space");
+const footerNav = document.getElementById("footer-nav");
+const visited = new Set();
+
+STATIONS.forEach(st=>{
+  const div = document.createElement("div");
+  div.className = "station";
+  div.id = "station-"+st.id;
+  div.style.left = st.x+"%";
+  div.style.top = st.y+"%";
+  div.innerHTML = `
+    <div class="ring"><svg viewBox="0 0 24 24">${st.icon}</svg></div>
+    <div class="label">${st.label}<span class="sub">${st.sub}</span></div>
+  `;
+  div.addEventListener("click", (e)=>{ e.stopPropagation(); dockAt(st); });
+  spaceEl.appendChild(div);
+
+  const btn = document.createElement("button");
+  btn.textContent = st.label;
+  btn.addEventListener("click", ()=>dockAt(st));
+  footerNav.appendChild(btn);
+});
+
+function dockAt(st){
+  openPanel(st.id);
+  flyTo(st.x, st.y);
+  if(!visited.has(st.id)){
+    visited.add(st.id);
+    document.getElementById("station-"+st.id).classList.add("visited");
+    document.getElementById("scan-count").textContent = visited.size;
+  }
+}
+
+/* ============================================================
+   Panel open/close
+   ============================================================ */
+const panel = document.getElementById("panel");
+document.getElementById("panel-close").addEventListener("click", ()=>{
+  panel.classList.remove("open");
+  resumeIdleSoon();
+});
+function openPanel(id){
+  const p = PANELS[id];
+  document.getElementById("panel-tag").textContent = p.tag;
+  document.getElementById("panel-title").textContent = p.title;
+  document.getElementById("panel-body").innerHTML = p.render();
+  panel.classList.add("open");
+  panel.scrollTop = 0;
+}
+
+/* ============================================================
+   Ship movement: smooth lerp + rotation toward target,
+   idle wandering when no target has been requested recently.
+   ============================================================ */
+const ship = document.getElementById("ship");
+let pos = {x:50, y:50};
+let target = {x:50, y:50};
+let angle = 0;
+let idleTimeout = null;
+let idleActive = true;
+
+function randomIdleTarget(){
+  target = { x: 15 + Math.random()*70, y: 20 + Math.random()*60 };
+}
+function flyTo(x,y){
+  idleActive = false;
+  clearTimeout(idleTimeout);
+  target = {x,y};
+}
+function resumeIdleSoon(){
+  clearTimeout(idleTimeout);
+  idleTimeout = setTimeout(()=>{ idleActive = true; randomIdleTarget(); }, 2500);
+}
+resumeIdleSoon();
+
+spaceEl.addEventListener("click", (e)=>{
+  if(e.target.closest(".station")) return;
+  const rect = spaceEl.getBoundingClientRect();
+  const x = ((e.clientX-rect.left)/rect.width)*100;
+  const y = ((e.clientY-rect.top)/rect.height)*100;
+  flyTo(x,y);
+  resumeIdleSoon();
+});
+
+function angleLerp(a,b,t){
+  let diff = ((b-a+540)%360)-180;
+  return a + diff*t;
+}
+
+function animate(){
+  const dx = target.x - pos.x, dy = target.y - pos.y;
+  const dist = Math.hypot(dx,dy);
+  if(dist > 0.3){
+    pos.x += dx*0.035;
+    pos.y += dy*0.035;
+    const targetAngle = Math.atan2(dy,dx)*180/Math.PI + 90;
+    angle = angleLerp(angle, targetAngle, 0.08);
+  } else if(idleActive){
+    randomIdleTarget();
+  }
+  ship.style.left = pos.x+"%";
+  ship.style.top = pos.y+"%";
+  ship.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* ============================================================
+   Starfield
+   ============================================================ */
+const canvas = document.getElementById("stars");
+const ctx = canvas.getContext("2d");
+let stars = [];
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  stars = [];
+  const count = Math.floor((canvas.width*canvas.height)/9000);
+  for(let i=0;i<count;i++){
+    stars.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      r: Math.random()*1.3+0.2,
+      phase: Math.random()*Math.PI*2,
+      speed: 0.5+Math.random()*1.2
+    });
+  }
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+function drawStars(t){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const s of stars){
+    const o = 0.4 + 0.6*Math.abs(Math.sin(t*0.0006*s.speed + s.phase));
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255,255,255,${o})`;
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+requestAnimationFrame(drawStars);
+
+/* ============================================================
+   Intro overlay
+   ============================================================ */
+const intro = document.getElementById("intro");
+document.getElementById("intro-start").addEventListener("click", ()=>{
+  intro.classList.add("hidden");
+});
+</script>
+</body>
+</html>
