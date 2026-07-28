@@ -37,17 +37,9 @@
 
   #hud-top{
     position:fixed;top:0;left:0;right:0;z-index:20;
-    display:flex;justify-content:space-between;align-items:flex-start;
+    display:flex;justify-content:flex-end;align-items:flex-start;
     padding:18px 24px;pointer-events:none;
   }
-  #hud-top .title{
-    pointer-events:auto;
-  }
-  #hud-top h1{
-    margin:0;font-size:1.4rem;letter-spacing:2px;color:var(--rust-bright);
-    text-shadow:0 0 12px #ff8a3d55;
-  }
-  #hud-top .sub{margin:2px 0 0;font-size:0.75rem;color:var(--teal);letter-spacing:1px;}
   #hud-top .scan{
     text-align:right;font-size:0.7rem;color:#9fb3c8;letter-spacing:1px;pointer-events:auto;
   }
@@ -75,6 +67,24 @@
   .station .label{
     font-size:0.72rem;font-weight:bold;letter-spacing:1.5px;color:var(--paper);text-align:center;
     background:rgba(5,6,10,0.7);padding:3px 8px;border-radius:2px;white-space:nowrap;
+  }
+
+  #hero{
+    position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);
+    z-index:3;text-align:center;pointer-events:none;width:min(360px,80vw);
+  }
+  #hero-photo{
+    width:140px;height:140px;border-radius:50%;border:2px solid var(--rust-bright);
+    overflow:hidden;margin:0 auto 16px;box-shadow:0 0 26px #ff8a3d66;background:#0e1a24;
+  }
+  #hero-photo img{width:100%;height:100%;object-fit:cover;display:block;}
+  #hero h1{margin:0;font-size:1.7rem;letter-spacing:3px;color:var(--paper);text-shadow:0 0 14px #000a;}
+  #hero .hero-tag{margin:8px 0 0;font-size:0.75rem;color:var(--teal);letter-spacing:1px;}
+  #hero .hero-hint{margin:14px 0 0;font-size:0.66rem;color:#9fb3c8;letter-spacing:1px;}
+
+  @media (max-width:640px){
+    #hero-photo{width:100px;height:100px;}
+    #hero h1{font-size:1.2rem;}
   }
 
   #ship{
@@ -158,17 +168,13 @@
       </g>
     </svg>
   </div>
+  <div id="hero"></div>
   <!-- stations injected by JS -->
 </div>
 
 <div id="hud-top">
-  <div class="title">
-    <h1>COLE YOUNOSZAI</h1>
-    <p class="sub">COMPUTER SCIENCE STUDENT · CONSULTING · DATA SCIENCE · SOFTWARE ENGINEERING</p>
-  </div>
   <div class="scan">
-    SECTIONS VIEWED: <b id="scan-count">0</b>/5<br>
-    <span style="font-size:0.62rem;">click any destination to view details</span>
+    SECTIONS VIEWED: <b id="scan-count">0</b>/5
   </div>
 </div>
 
@@ -200,31 +206,18 @@ const DATA = {
   accomplishments: [
     {
       title: "President — Kappa Theta Pi (Nu Chapter)",
-      detail: "Elected to lead a 60+ member national professional technology fraternity for a full year — running chapter strategy, recruitment, and mentorship programs that strengthened members' job-placement outcomes."
-    },
-    {
-      title: "Implementation Consultant Intern — FAST Enterprises",
-      detail: "Partnered directly with a state Department of Transportation to rebuild Iowa's driver-services software, translating government requirements into configured, tested systems and presenting results straight to stakeholders."
-    },
-    {
-      title: "Community Center Lead — CU Boulder",
-      detail: "Manages a 15-person student staff and streamlined administrative operations for residence hall facilities through Excel-driven process improvements."
+      detail: "Elected to lead a 60+ member national professional technology fraternity for a full year — running chapter strategy, recruitment, and mentorship programs that strengthened members' job-placement outcomes.",
+      link: "https://www.ktpboulder.com/"
     },
     {
       title: "Mentor — OPALS, Center for Energy Research",
       detail: "Guided 6 high schoolers through a full computational research lifecycle, from data collection to publication, while analyzing and visualizing battery performance data in Python."
-    },
-    {
-      title: "Program Leader — Roundup River Ranch",
-      detail: "Led outdoor programming for children with life-threatening chronic illnesses, adapting activities to individual medical needs and coordinating a team of 4 volunteers weekly."
     }
   ],
   experience: [
     {role:"Implementation Consultant Intern", org:"FAST Enterprises · Des Moines, IA", period:"May 2026 – Aug 2026", detail:"Improved government driver-services software by translating client requirements into configured, tested system solutions and presenting updates directly to state stakeholders."},
-    {role:"Mentor / Intern", org:"OPALS, Center for Energy Research · San Diego, CA", period:"Sept 2024 – Aug 2025", detail:"Mentored 6 high school students through the full research lifecycle; analyzed and visualized battery performance data in Python and Excel."},
     {role:"Program Leader", org:"Roundup River Ranch · Gypsum, CO", period:"Apr 2025 – Aug 2025", detail:"Led outdoor programs for groups of up to 14 children with chronic illnesses; managed 4 volunteers weekly."},
-    {role:"Community Center Lead", org:"University of Colorado Boulder · Boulder, CO", period:"Dec 2023 – Present", detail:"Manages a 15-person staff and daily front-desk operations for residence hall facilities."},
-    {role:"President", org:"Kappa Theta Pi (Nu Chapter)", period:"Dec 2023 – Present", detail:"Leads operations for a 60+ member national professional technology fraternity."}
+    {role:"Community Center Lead", org:"University of Colorado Boulder · Boulder, CO", period:"Dec 2023 – Present", detail:"Manages a 15-person staff and daily front-desk operations for residence hall facilities."}
   ],
   projects: [
     {name:"Song-Seeker Website", stack:"JavaScript · HTML/CSS · SQL", detail:"Full-stack music recommendation site with playlist creation, search, and user accounts. Integrated the Spotify and Last.fm APIs and designed a SQL schema for efficient user data queries."},
@@ -246,15 +239,17 @@ const STATIONS = [
 /* ============================================================
    Panel rendering
    ============================================================ */
-function renderAbout(){
-  const photoHtml = DATA.photo
+function getPhotoHtml(){
+  return DATA.photo
     ? `<img src="${DATA.photo}" alt="${DATA.name}">`
     : `<svg viewBox="0 0 100 100" width="100%" height="100%" style="background:#0e1a24;">
          <circle cx="50" cy="38" r="18" fill="#2ec4b6" opacity="0.5"/>
          <path d="M20 88c0-18 13-30 30-30s30 12 30 30" fill="#2ec4b6" opacity="0.5"/>
        </svg>`;
+}
+function renderAbout(){
   return `
-    <div id="photo-frame">${photoHtml}</div>
+    <div id="photo-frame">${getPhotoHtml()}</div>
     <p style="text-align:center;color:#9fb3c8;font-size:0.72rem;">${DATA.title}<br>${DATA.location}</p>
     <p>${DATA.bio}</p>
     <div class="stats-row">${DATA.stats.map(s=>`<div class="stat">${s}</div>`).join("")}</div>
@@ -265,6 +260,7 @@ function renderBounty(){
     <div class="card">
       <h3>${a.title}</h3>
       <p style="margin:0;">${a.detail}</p>
+      ${a.link ? `<p style="margin:8px 0 0;"><a href="${a.link}" target="_blank" rel="noopener">Visit chapter website →</a></p>` : ""}
     </div>
   `).join("");
 }
@@ -310,6 +306,13 @@ const spaceEl = document.getElementById("space");
 const footerNav = document.getElementById("footer-nav");
 const visited = new Set();
 
+document.getElementById("hero").innerHTML = `
+  <div id="hero-photo">${getPhotoHtml()}</div>
+  <h1>${DATA.name.toUpperCase()}</h1>
+  <p class="hero-tag">${DATA.title}</p>
+  <p class="hero-hint">Click any destination to explore</p>
+`;
+
 STATIONS.forEach(st=>{
   const div = document.createElement("div");
   div.className = "station";
@@ -345,7 +348,6 @@ function dockAt(st){
 const panel = document.getElementById("panel");
 document.getElementById("panel-close").addEventListener("click", ()=>{
   panel.classList.remove("open");
-  resumeIdleSoon();
 });
 function openPanel(id){
   const p = PANELS[id];
@@ -356,29 +358,18 @@ function openPanel(id){
 }
 
 /* ============================================================
-   Ship movement: smooth lerp + rotation toward target,
-   idle wandering when no target has been requested recently.
+   Ship movement: smooth lerp + rotation toward target.
+   The ship only moves when the user clicks a destination or
+   an empty patch of space — no idle wandering.
    ============================================================ */
 const ship = document.getElementById("ship");
-let pos = {x:50, y:50};
-let target = {x:50, y:50};
+let pos = {x:50, y:66};
+let target = {x:50, y:66};
 let angle = 0;
-let idleTimeout = null;
-let idleActive = true;
 
-function randomIdleTarget(){
-  target = { x: 15 + Math.random()*70, y: 20 + Math.random()*60 };
-}
 function flyTo(x,y){
-  idleActive = false;
-  clearTimeout(idleTimeout);
   target = {x,y};
 }
-function resumeIdleSoon(){
-  clearTimeout(idleTimeout);
-  idleTimeout = setTimeout(()=>{ idleActive = true; randomIdleTarget(); }, 2500);
-}
-resumeIdleSoon();
 
 spaceEl.addEventListener("click", (e)=>{
   if(e.target.closest(".station")) return;
@@ -386,7 +377,6 @@ spaceEl.addEventListener("click", (e)=>{
   const x = ((e.clientX-rect.left)/rect.width)*100;
   const y = ((e.clientY-rect.top)/rect.height)*100;
   flyTo(x,y);
-  resumeIdleSoon();
 });
 
 function angleLerp(a,b,t){
@@ -402,8 +392,6 @@ function animate(){
     pos.y += dy*0.035;
     const targetAngle = Math.atan2(dy,dx)*180/Math.PI + 90;
     angle = angleLerp(angle, targetAngle, 0.08);
-  } else if(idleActive){
-    randomIdleTarget();
   }
   ship.style.left = pos.x+"%";
   ship.style.top = pos.y+"%";
